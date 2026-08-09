@@ -32,7 +32,7 @@
       const text = lastResult[0].transcript.trim().toLowerCase();
       output.textContent = "Heard: " + text;
 
-      if (text.includes("eaden")) {
+      if (text.includes("eaden") || text.includes("eden") || text.includes("aiden") || text.includes("aden")) {
         status.textContent = "Wake word detected! Listening for your question...";
         const speech = new SpeechSynthesisUtterance("Yes? I'm listening.");
         window.speechSynthesis.speak(speech);
