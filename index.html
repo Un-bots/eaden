@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Eaden - Mic Test</title>
+</head>
+<body style="font-family:sans-serif; text-align:center; padding:40px;">
+  <h1>🎙️ Eaden Mic Test</h1>
+  <button id="startBtn" style="font-size:20px; padding:15px 30px;">Tap to Talk</button>
+  <p id="output" style="font-size:18px; margin-top:20px;">Say something...</p>
+
+  <script>
+    const output = document.getElementById('output');
+    const startBtn = document.getElementById('startBtn');
+
+    const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+    recognition.lang = 'en-US';
+    recognition.continuous = false;
+
+    startBtn.onclick = () => {
+      output.textContent = "Listening...";
+      recognition.start();
+    };
+
+    recognition.onresult = (event) => {
+      const text = event.results[0][0].transcript;
+      output.textContent = "You said: " + text;
+
+      // speak it back
+      const speech = new SpeechSynthesisUtterance(text);
+      window.speechSynthesis.speak(speech);
+    };
+
+    recognition.onerror = (event) => {
+      output.textContent = "Error: " + event.error;
+    };
+  </script>
+</body>
+</html>
