@@ -8,9 +8,11 @@
   <button id="startBtn" style="font-size:20px; padding:15px 30px;">Activate Eaden</button>
   <p id="status" style="font-size:16px; color:gray;">Not listening</p>
   <p id="output" style="font-size:18px; margin-top:20px;"></p>
+  <p id="reply" style="font-size:18px; margin-top:10px; color:#2a6;"></p>
 
   <script>
     const output = document.getElementById('output');
+    const replyEl = document.getElementById('reply');
     const status = document.getElementById('status');
     const startBtn = document.getElementById('startBtn');
 
@@ -20,6 +22,7 @@
     recognition.interimResults = false;
 
     let active = false;
+    let awaitingQuestion = false;
 
     startBtn.onclick = () => {
       active = true;
@@ -27,16 +30,43 @@
       recognition.start();
     };
 
+    function speak(text) {
+      const speech = new SpeechSynthesisUtterance(text);
+      window.speechSynthesis.speak(speech);
+    }
+
+    async function askGemini(question) {
+      status.textContent = "Thinking...";
+      try {
+        const res = await fetch('/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: question })
+        });
+        const data = await res.json();
+        replyEl.textContent = "Eaden: " + data.reply;
+        speak(data.reply);
+      } catch (err) {
+        replyEl.textContent = "Error reaching Eaden's brain.";
+      }
+      status.textContent = "Listening for 'Eaden'...";
+    }
+
     recognition.onresult = (event) => {
       const lastResult = event.results[event.results.length - 1];
       const text = lastResult[0].transcript.trim().toLowerCase();
       output.textContent = "Heard: " + text;
 
-      if (text.includes("eaden") || text.includes("eden") || text.includes("aiden") || text.includes("aden")) {
-        status.textContent = "Wake word detected! Listening for your question...";
-        const speech = new SpeechSynthesisUtterance("Yes? I'm listening.");
-        window.speechSynthesis.speak(speech);
-        // Next step: here's where we'll send the follow-up question to Gemini
+      const wakeWords = ["eaden", "eden", "aiden", "aden"];
+      const hasWake = wakeWords.some(w => text.includes(w));
+
+      if (awaitingQuestion) {
+        awaitingQuestion = false;
+        askGemini(text);
+      } else if (hasWake) {
+        status.textContent = "Wake word detected! Ask your question...";
+        speak("Yes? I'm listening.");
+        awaitingQuestion = true;
       }
     };
 
@@ -45,9 +75,7 @@
     };
 
     recognition.onend = () => {
-      if (active) {
-        recognition.start(); // keep it running continuously
-      }
+      if (active) recognition.start();
     };
   </script>
 </body>
