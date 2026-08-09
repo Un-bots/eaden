@@ -1,37 +1,53 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Eaden - Mic Test</title>
+  <title>Eaden</title>
 </head>
 <body style="font-family:sans-serif; text-align:center; padding:40px;">
-  <h1>🎙️ Eaden Mic Test</h1>
-  <button id="startBtn" style="font-size:20px; padding:15px 30px;">Tap to Talk</button>
-  <p id="output" style="font-size:18px; margin-top:20px;">Say something...</p>
+  <h1>🎙️ Eaden</h1>
+  <button id="startBtn" style="font-size:20px; padding:15px 30px;">Activate Eaden</button>
+  <p id="status" style="font-size:16px; color:gray;">Not listening</p>
+  <p id="output" style="font-size:18px; margin-top:20px;"></p>
 
   <script>
     const output = document.getElementById('output');
+    const status = document.getElementById('status');
     const startBtn = document.getElementById('startBtn');
 
     const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
     recognition.lang = 'en-US';
-    recognition.continuous = false;
+    recognition.continuous = true;
+    recognition.interimResults = false;
+
+    let active = false;
 
     startBtn.onclick = () => {
-      output.textContent = "Listening...";
+      active = true;
+      status.textContent = "Listening for 'Eaden'...";
       recognition.start();
     };
 
     recognition.onresult = (event) => {
-      const text = event.results[0][0].transcript;
-      output.textContent = "You said: " + text;
+      const lastResult = event.results[event.results.length - 1];
+      const text = lastResult[0].transcript.trim().toLowerCase();
+      output.textContent = "Heard: " + text;
 
-      // speak it back
-      const speech = new SpeechSynthesisUtterance(text);
-      window.speechSynthesis.speak(speech);
+      if (text.includes("eaden")) {
+        status.textContent = "Wake word detected! Listening for your question...";
+        const speech = new SpeechSynthesisUtterance("Yes? I'm listening.");
+        window.speechSynthesis.speak(speech);
+        // Next step: here's where we'll send the follow-up question to Gemini
+      }
     };
 
     recognition.onerror = (event) => {
-      output.textContent = "Error: " + event.error;
+      status.textContent = "Error: " + event.error;
+    };
+
+    recognition.onend = () => {
+      if (active) {
+        recognition.start(); // keep it running continuously
+      }
     };
   </script>
 </body>
